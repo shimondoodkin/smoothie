@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      body {
+        background-color: #111111;
+        color: #eeeeee;
+        font-family: tahoma, arial, sans-serif;
+        padding-left: 100px;
+      }
+      h4 {
+        margin-bottom: 1px;
+      }
+    </style>
+    <script type="text/javascript" src="smoothie.js"></script>
+    <script type="text/javascript">
+
+// tinyxhr by Shimon Doodkin - licanse: public doamin - https://gist.github.com/4706967
+function tinyxhr(url,cb,method,post,contenttype)
+{
+ var requestTimeout,xhr;
+ try{ xhr = new XMLHttpRequest(); }catch(e){
+ try{ xhr = new ActiveXObject("Msxml2.XMLHTTP"); }catch (e){
+  if(console)console.log("tinyxhr: XMLHttpRequest not supported");
+  return null;
+ }
+ }
+ requestTimeout = setTimeout(function() {xhr.abort(); cb(new Error("tinyxhr: aborted by a timeout"), "",xhr); }
+                             , 10000);
+ xhr.onreadystatechange = function()
+ {
+  if (xhr.readyState != 4) return;
+  clearTimeout(requestTimeout);
+  cb(xhr.status != 200?new Error("tinyxhr: server respnse status is "+xhr.status):false, xhr.responseText,xhr);
+ }
+ xhr.open(method?method.toUpperCase():"GET", url, true);
+ 
+ //xhr.withCredentials = true;
+  
+ if(!post)
+  xhr.send();
+ else
+ {
+  xhr.setRequestHeader('Content-type', contenttype?contenttype:'application/x-www-form-urlencoded');
+  xhr.send(post)
+ }
+}
+
+
+
+/*
+var seriesOptions = [
+  { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.1)', lineWidth: 3 }
+];
+function initchart1() {
+
+  // Initialize an empty TimeSeries for each CPU.
+  var timeseries={}
+  timeseries.ils=new TimeSeries()
+  timeseries.usd=new TimeSeries()
+
+  // Every second, simulate a new set of readings being taken from each CPU.
+  setInterval(function() {
+	httpget('/coinsstatus',function(data){
+		var data=JSON.parse(data);
+		timeseries.ils.append(new Date().getTime(), data.ils);
+		timeseries.usd.append(new Date().getTime(), data.usd);
+	});
+  }, 1000);
+
+  // Build the timeline
+  var smoothie = new SmoothieChart({ fps: 30, millisPerPixel: 20, grid: { strokeStyle: '#555555', lineWidth: 1, millisPerLine: 1000, verticalSections: 4}});
+      smoothie.addTimeSeries(timeseries.ils, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+      smoothie.addTimeSeries(timeseries.usd, { strokeStyle: 'rgb(255, 0, 255)', fillStyle: 'rgba(255, 0, 255, 0.3)', lineWidth: 3 });
+      smoothie.streamTo(document.getElementById('chart1'), 1000);
+}
+*/
+	
+function init()
+{
+  var timeseries={}
+  timeseries.ils=new TimeSeries()
+  timeseries.usd=new TimeSeries()
+  timeseries.ilsusd=new TimeSeries()
+  
+  var smoothie11 = new SmoothieChart({ fps: 30, millisPerPixel: 20, grid: { strokeStyle: '#555555', lineWidth: 1, millisPerLine: 1000, verticalSections: 4}});
+      smoothie11.addTimeSeries(timeseries.ils, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+      smoothie11.addTimeSeries(timeseries.usd, { strokeStyle: 'rgb(255, 0, 255)', fillStyle: 'rgba(255, 0, 255, 0.3)', lineWidth: 3 });
+      smoothie11.streamTo(document.getElementById('chart1'), 1000);
+	
+  var smoothie12 = new SmoothieChart({ fps: 30, millisPerPixel: 20, grid: { strokeStyle: '#555555', lineWidth: 1, millisPerLine: 1000, verticalSections: 4}});
+      smoothie12.addTimeSeries(timeseries.ilsusd, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+      smoothie12.streamTo(document.getElementById('chart2'), 1000);	  
+	  
+  setInterval(function() {
+	tinyxhr('/coinsstatus',function(err,data){
+		var data=JSON.parse(data);
+		if(!data)return;
+		timeseries.ils.append(new Date().getTime(), data.ils);
+		timeseries.usd.append(new Date().getTime(), data.usd);
+		timeseries.ilsusd.append(new Date().getTime(), data.ils/data.usd);
+	});
+  }, 100);
+}
+
+	</script>
+  </head>
+  <body onload="init()">
+
+    <h1>charts</h1>
+
+    <h4>ils,usd</h4>
+    <canvas id="chart1" width="1200" height="200"></canvas>
+
+    <h4>ils/usd</h4>
+    <canvas id="chart2" width="1200" height="600"></canvas>
+<!--
+    <h4>host3.example.com</h4>
+    <canvas id="host3Cpu" width="500" height="100"></canvas>
+
+    <h4>host4.example.com</h4>
+    <canvas id="host4Cpu" width="500" height="100"></canvas>
+-->
+  </body>
+</html>
